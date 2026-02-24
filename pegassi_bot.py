@@ -1,19 +1,20 @@
 import requests
 import time
+import os
 
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-CHAT_ID = "-5280158370"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
 API_URL = "https://api.celebratix.io/shop/v1/channel-layout/87jds?eventSgid=e_rpf7t"
 
-last_update_id = None
+last_update_id = 0
 alert_active = False
 
 
-def send_message(text):
+def send_message(chat_id, text):
     requests.post(
         f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-        data={"chat_id": CHAT_ID, "text": text}
+        data={"chat_id": chat_id, "text": text}
     )
 
 
@@ -23,7 +24,6 @@ def get_ticket_data():
 
 
 def extract_ticket_dict(data):
-    # Some responses wrap inside "data"
     if "ticketTypeDictionary" in data:
         return data["ticketTypeDictionary"]
 
@@ -55,6 +55,7 @@ def check_resale(ticket_dict):
 
         if resale > 0 and not alert_active:
             send_message(
+                CHAT_ID,
                 f"🚨 RESALE LIVE 🚨\n\n{ticket['name']}\nAvailable resale tickets: {resale}"
             )
             alert_active = True
@@ -63,55 +64,44 @@ def check_resale(ticket_dict):
             alert_active = False
 
 
-def check_commands():
-    global last_update_id
-
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates"
-    if last_update_id:
-        url += f"?offset={last_update_id + 1}"
-
-    response = requests.get(url).json()
-
-    for result in response.get("result", []):
-        last_update_id = result["update_id"]
-
-        message = result.get("message")
-        if not message:
-            continue
-
-        text = message.get("text")
-        chat_id = message["chat"]["id"]
-
-        if text == "/status":
-            data = get_ticket_data()
-            ticket_dict = extract_ticket_dict(data)
-
-            if not ticket_dict:
-                send_message("⚠️ Could not fetch ticket data.")
-                return
-
-            status_msg = build_status_message(ticket_dict)
-
-            requests.post(
-                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                data={"chat_id": chat_id, "text": status_msg}
-            )
-
-
 print("Bot running...")
 
 while True:
     try:
+        # ---- CHECK RESALE ----
         data = get_ticket_data()
         ticket_dict = extract_ticket_dict(data)
 
         if ticket_dict:
             check_resale(ticket_dict)
 
-        check_commands()
+        # ---- CHECK TELEGRAM COMMANDS (LONG POLLING) ----
+        response = requests.get(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates",
+            params={"offset": last_update_id + 1, "timeout": 30}
+        ).json()
 
-        time.sleep(20)
+        for result in response.get("result", []):
+            last_update_id = result["update_id"]
+
+            message = result.get("message")
+            if not message:
+                continue
+
+            text = message.get("text")
+            chat_id = message["chat"]["id"]
+
+            print("Received:", text)
+
+            if text and text.startswith("/status"):
+                if ticket_dict:
+                    status_msg = build_status_message(ticket_dict)
+                    send_message(chat_id, status_msg)
+                else:
+                    send_message(chat_id, "⚠️ Could not fetch ticket data.")
+
+        time.sleep(5)
 
     except Exception as e:
         print("Error:", e)
-        time.sleep(20)
+        time.sleep(5)
