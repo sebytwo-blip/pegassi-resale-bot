@@ -35,13 +35,25 @@ def get_ticket_data():
 
 
 def extract_ticket_dict(data):
+    # Direct structure
     if "ticketTypeDictionary" in data:
         return data["ticketTypeDictionary"]
 
-    if "data" in data and "ticketTypeDictionary" in data["data"]:
-        return data["data"]["ticketTypeDictionary"]
+    # Nested inside "data"
+    if "data" in data:
+        inner = data["data"]
 
-    print("Ticket dictionary not found. Keys:", list(data.keys()))
+        # Sometimes dictionary is directly inside
+        if "ticketTypeDictionary" in inner:
+            return inner["ticketTypeDictionary"]
+
+        # Sometimes tickets are inside list[0]
+        if "list" in inner and len(inner["list"]) > 0:
+            first_event = inner["list"][0]
+            if "ticketTypeDictionary" in first_event:
+                return first_event["ticketTypeDictionary"]
+
+    print("Ticket dictionary not found. Full data keys:", list(data.keys()))
     return None
 
 
