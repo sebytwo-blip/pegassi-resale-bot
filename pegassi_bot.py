@@ -5,7 +5,7 @@ import os
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-API_URL = "https://api.celebratix.io/shop/v1/events/e_rpf7t"
+API_URL = "https://api.celebratix.io/shop/v1/events/e_rpf7t?includeTicketTypes=true"
 
 last_update_id = 0
 alert_active = False
