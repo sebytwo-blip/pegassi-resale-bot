@@ -70,6 +70,7 @@ def build_status_message(ticket_dict):
             f"Status: {ticket.get('status', 'Unknown')}\n\n"
         )
 
+    msg += "\n🎟 Event link:\nhttps://shop.celebratix.io/?c=87jds\n"
     return msg
 
 
@@ -82,7 +83,11 @@ def check_resale(ticket_dict):
         if resale > 0 and not alert_active:
             send_message(
                 CHAT_ID,
-                f"🚨 RESALE LIVE 🚨\n\n{ticket['name']}\nAvailable resale tickets: {resale}"
+                f"🚨 RESALE LIVE 🚨\n\n"
+                f"{ticket['name']}\n"
+                f"Available resale tickets: {resale}\n\n"
+                f"🎟 Buy now:\n"
+                f"https://shop.celebratix.io/?c=87jds"
             )
             alert_active = True
 
