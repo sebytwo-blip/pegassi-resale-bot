@@ -77,7 +77,7 @@ def check_resale(ticket_dict):
     global alert_active
 
     for ticket in ticket_dict.values():
-        resale = 1
+        resale = ticket.get("ticketsOfferedInResale", 0)
 
         if resale > 0 and not alert_active:
             send_message(
