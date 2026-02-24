@@ -19,8 +19,19 @@ def send_message(chat_id, text):
 
 
 def get_ticket_data():
-    r = requests.get(API_URL)
-    return r.json()
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json"
+    }
+
+    r = requests.get(API_URL, headers=headers)
+
+    try:
+        return r.json()
+    except Exception as e:
+        print("Failed to parse JSON:", e)
+        print("Raw response:", r.text)
+        return {}
 
 
 def extract_ticket_dict(data):
@@ -30,6 +41,7 @@ def extract_ticket_dict(data):
     if "data" in data and "ticketTypeDictionary" in data["data"]:
         return data["data"]["ticketTypeDictionary"]
 
+    print("Ticket dictionary not found. Keys:", list(data.keys()))
     return None
 
 
