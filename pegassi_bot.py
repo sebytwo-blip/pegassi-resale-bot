@@ -21,7 +21,9 @@ def send_message(chat_id, text):
 def get_ticket_data():
     headers = {
         "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "X-Celebratix-App-Id": "widget:2.4.5",
+        "X-Celebratix-Shop-Channel": "87jds"
     }
 
     r = requests.get(API_URL, headers=headers)
