@@ -26,17 +26,28 @@ def get_ticket_data():
         "X-Celebratix-Shop-Channel": "87jds"
     }
 
-    r = requests.get(API_URL, headers=headers)
-
     try:
+        r = requests.get(API_URL, headers=headers, timeout=10)
+
+        if r.status_code != 200:
+            print("API returned status:", r.status_code)
+            return None
+
+        if "application/json" not in r.headers.get("Content-Type", ""):
+            print("Received non-JSON response (likely Cloudflare).")
+            return None
+
         return r.json()
+
     except Exception as e:
-        print("Failed to parse JSON:", e)
-        print("Raw response:", r.text)
-        return {}
+        print("API request failed:", e)
+        return None
 
 
 def extract_ticket_dict(data):
+    if not data:
+        print("No data received from API.")
+        return None
     # Direct structure
     if "ticketTypeDictionary" in data:
         return data["ticketTypeDictionary"]
@@ -129,10 +140,10 @@ while True:
                     status_msg = build_status_message(ticket_dict)
                     send_message(chat_id, status_msg)
                 else:
-                    send_message(chat_id, "⚠️ Could not fetch ticket data.")
+                    send_message(chat_id, "⚠️ API temporarily unavailable. Please try again in a minute.")
 
-        time.sleep(5)
+        time.sleep(15)
 
     except Exception as e:
         print("Error:", e)
-        time.sleep(5)
+        time.sleep(15)
